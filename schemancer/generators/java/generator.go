@@ -29,7 +29,7 @@ var javaReservedWords = map[string]bool{
 	"volatile": true, "while": true,
 }
 
-// javaConflictingGetters contains accessor method names that conflict with
+// javaConflictingGetters contains getter method names that conflict with
 // methods on java.lang.Object and would cause compilation errors.
 var javaConflictingGetters = map[string]bool{
 	"getClass": true,
@@ -449,7 +449,7 @@ func makeJavaTypeFunc(formatMappings map[ir.IRFormat]generators.FormatTypeMappin
 			case ir.IRBuiltinString:
 				return "String"
 			case ir.IRBuiltinInt:
-				return "Integer"
+				return "Long"
 			case ir.IRBuiltinFloat:
 				return "Double"
 			case ir.IRBuiltinBool:
@@ -483,9 +483,9 @@ func makeJavaTypeFunc(formatMappings map[ir.IRFormat]generators.FormatTypeMappin
 					baseType = "String"
 				case ir.IRBuiltinInt:
 					if required {
-						baseType = "int"
+						baseType = "long"
 					} else {
-						baseType = "Integer"
+						baseType = "Long"
 					}
 				case ir.IRBuiltinFloat:
 					if required {
@@ -565,12 +565,10 @@ func safeJavaFieldName(field ir.IRField) string {
 	if name, ok := field.Extensions["x-java-name"]; ok {
 		return name
 	}
-
 	name := casing.ToCamelCase(field.Name)
 	if javaReservedWords[name] {
 		return name + "_"
 	}
-
 	return name
 }
 
@@ -619,7 +617,7 @@ func makeJavaGetterFunc(formatMappings map[ir.IRFormat]generators.FormatTypeMapp
 		}
 		methodName := prefix + pascalName
 		if javaConflictingGetters[methodName] {
-			methodName += "_"
+			methodName = methodName + "_"
 		}
 		return fmt.Sprintf("    public %s %s() {\n        return %s;\n    }", typeName, methodName, fieldName)
 	}
@@ -634,7 +632,7 @@ func makeJavaSetterFunc(formatMappings map[ir.IRFormat]generators.FormatTypeMapp
 		pascalName := casing.ToPascalCase(field.Name)
 		setterName := "set" + pascalName
 		if javaConflictingGetters["get"+pascalName] {
-			setterName += "_"
+			setterName = setterName + "_"
 		}
 		return fmt.Sprintf("    public void %s(%s %s) {\n        this.%s = %s;\n    }", setterName, typeName, fieldName, fieldName, fieldName)
 	}
@@ -713,14 +711,14 @@ public enum {{.Name}} {
 {{- end}}
 {{- end}};
 
-    private final int value;
+    private final long value;
 
-    {{.Name}}(int value) {
+    {{.Name}}(long value) {
         this.value = value;
     }
 
     @JsonValue
-    public int getValue() {
+    public long getValue() {
         return value;
     }
 }
@@ -863,14 +861,14 @@ public enum {{.Name}} {
 {{- end}}
 {{- end}};
 
-    private final int value;
+    private final long value;
 
-    {{.Name}}(int value) {
+    {{.Name}}(long value) {
         this.value = value;
     }
 
     @JsonValue
-    public int getValue() {
+    public long getValue() {
         return value;
     }
 }
