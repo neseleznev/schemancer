@@ -417,12 +417,17 @@ func convertSchemaToIRType(root *jsonschema.Schema, name string, schema *jsonsch
 	}
 
 	if schema.Type == "" && schema.Properties == nil {
+		// A multi-type or untyped schema (e.g. type: [string, number, ...]) is
+		// an "any", but a format on it is still meaningful: it lets a format
+		// mapping select a concrete type. Carry it through rather than dropping
+		// it. IRFormatNone (no format) leaves this a plain any.
 		return &ir.IRType{
 			Name:        goName,
 			Description: schema.Description,
 			Kind:        ir.IRKindAlias,
 			Element: &ir.IRTypeRef{
 				Builtin: ir.IRBuiltinAny,
+				Format:  schemaFormatToIRFormat(schema.Format),
 			},
 		}
 	}
@@ -630,7 +635,9 @@ func schemaToIRTypeRefWithContext(root *jsonschema.Schema, schema *jsonschema.Sc
 		return ir.IRTypeRef{Map: &ir.IRTypeRef{Builtin: ir.IRBuiltinAny}, Constraints: constraints}
 	}
 
-	return ir.IRTypeRef{Builtin: ir.IRBuiltinAny, Constraints: constraints}
+	// Multi-type or untyped: an "any", but preserve any format so a format
+	// mapping can still select a concrete type (IRFormatNone is a no-op).
+	return ir.IRTypeRef{Builtin: ir.IRBuiltinAny, Format: schemaFormatToIRFormat(schema.Format), Constraints: constraints}
 }
 
 // parseDefault converts a JSON Schema default value (json.RawMessage) into an IRDefault.
